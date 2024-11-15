@@ -5,28 +5,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
-	"http_metric/config"
-	"log/slog"
+	"http_metric/lib/config"
 	"net/http"
 	"time"
 )
 
 func main() {
+
 	viper.SetConfigName("config")
-	viper.AddConfigPath("./")
+	viper.AddConfigPath("./config")
 	viper.SetConfigType("yaml")
 	viper.SetDefault("interval", 15)
 	viper.SetDefault("timeout", 10)
 	viper.SetDefault("port", 8080)
 
 	if err := viper.ReadInConfig(); err != nil {
-		slog.Error("Error reading config file, %s", err)
+		fmt.Printf("Error reading config file, %s\n", err)
 		return
 	}
 
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		slog.Error("Error reading config file, %s", err)
+		fmt.Printf("Error unmarshalling config, %s\n", err)
 		return
 	}
 
@@ -45,14 +45,13 @@ func main() {
 			for _, target := range cfg.Targets {
 				req, err := http.NewRequest("GET", target.Url, nil)
 				if err != nil {
-					slog.Error("Error creating request, %s", err)
+					fmt.Printf("Error creating request, %s\n", err)
 					continue
 				}
 
 				resp, err := client.Do(req)
 				if err != nil {
-					requestResponse.WithLabelValues(target.Url, target.Name).Set(0)
-					slog.Error("Error performing request, %s", err)
+					fmt.Printf("Error making request, %s\n", err)
 					continue
 				}
 				defer resp.Body.Close()
@@ -62,13 +61,12 @@ func main() {
 		}
 	}()
 
-	slog.Info("Starting HTTP server on port: " + fmt.Sprintf("%d", cfg.Port))
-	slog.Info("Metrics available at /metrics")
+	fmt.Printf("Starting HTTP server on port %d\n", cfg.Port)
 
 	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{EnableOpenMetrics: true}))
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), nil); err != nil {
-		slog.Error("Error starting HTTP server, %s", err)
+		fmt.Printf("Error starting HTTP server, %s\n", err)
 	}
 
 }

@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  http_metric:
+    image: docker.io/nantou/http-metric:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/config.yaml:/app/config/config.yaml

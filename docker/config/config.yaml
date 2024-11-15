@@ -1,0 +1,7 @@
+port: 8080
+interval: 15
+targets:
+  - name: localhost
+    url: http://localhost:8080
+
+
